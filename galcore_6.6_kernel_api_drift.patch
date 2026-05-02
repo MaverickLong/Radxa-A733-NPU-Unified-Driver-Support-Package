@@ -1,0 +1,173 @@
+diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
+index 44fbfac0..6e5cb273 100644
+--- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
++++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
+@@ -63,6 +63,9 @@
+ #include <linux/mutex.h>
+ #include <linux/atomic.h>
+ #include <linux/dma-mapping.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
++#include <linux/dma-resv.h>
++#endif
+ 
+ #include <linux/dma-buf.h>
+ #include <linux/platform_device.h>
+@@ -119,7 +122,11 @@ dma_buf_info_show(struct seq_file *m, void *data)
+     list_for_each_entry(buf_desc, &priv->buf_list, list) {
+         struct dma_buf *buf_obj = buf_desc->dmabuf;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
++        ret = dma_resv_lock_interruptible(buf_obj->resv, NULL);
++#else
+         ret = mutex_lock_interruptible(&buf_obj->lock);
++#endif
+ 
+         if (ret) {
+             seq_puts(m, "ERROR locking buffer object: skipping\n");
+@@ -144,7 +151,11 @@ dma_buf_info_show(struct seq_file *m, void *data)
+         size += buf_obj->size;
+         npages += buf_desc->npages;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
++        dma_resv_unlock(buf_obj->resv);
++#else
+         mutex_unlock(&buf_obj->lock);
++#endif
+     }
+ 
+     seq_printf(m, "\nTotal %d objects, %d pages, %zu bytes\n", count, npages, size);
+diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
+index 09902c03..f4ddacd1 100644
+--- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
++++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
+@@ -381,7 +381,9 @@ _GFPAlloc(gckALLOCATOR Allocator, PLINUX_MDL Mdl, gctSIZE_T NumPages, gctUINT32
+     gceSTATUS status;
+     gctSIZE_T i = 0;
+     gctBOOL contiguous = Flags & gcvALLOC_FLAG_CONTIGUOUS;
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
++    u32 normal_gfp = __GFP_HIGH | __GFP_NORETRY | gcdNOWARN;
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+     u32 normal_gfp = __GFP_HIGH | __GFP_ATOMIC | __GFP_NORETRY | gcdNOWARN;
+ #else
+     u32 normal_gfp = __GFP_HIGH | __GFP_NORETRY | gcdNOWARN;
+@@ -728,7 +730,11 @@ _GFPMmap(gckALLOCATOR Allocator, PLINUX_MDL Mdl, gctBOOL Cacheable,
+ 
+     gcmkHEADER_ARG("Allocator=%p Mdl=%p vma=%p", Allocator, Mdl, vma);
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
++    vm_flags_set(vma, gcdVM_FLAGS);
++#else
+     vma->vm_flags |= gcdVM_FLAGS;
++#endif
+ 
+     if (Cacheable == gcvFALSE) {
+         /* Make this mapping non-cached. */
+diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
+index 1c92af17..e6f39adc 100644
+--- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
++++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
+@@ -227,7 +227,11 @@ reserved_mem_mmap(gckALLOCATOR Allocator, PLINUX_MDL Mdl, gctBOOL Cacheable,
+     pfn = (res->start >> PAGE_SHIFT) + skipPages;
+ 
+     /* Make this mapping non-cached. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
++    vm_flags_set(vma, gcdVM_FLAGS);
++#else
+     vma->vm_flags |= gcdVM_FLAGS;
++#endif
+ 
+ #if gcdENABLE_BUFFERABLE_VIDEO_MEMORY
+     vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
+index 4d871178..536fab66 100644
+--- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
++++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
+@@ -63,7 +63,12 @@
+ 
+ #define _GC_OBJ_ZONE        gcvZONE_ALLOCATOR
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
++/* __pte_offset_map_lock is not exported to OOT modules on 6.5+; use follow_pfn instead. */
++#define gcdUSING_PFN_FOLLOW 1
++#else
+ #define gcdUSING_PFN_FOLLOW 0
++#endif
+ 
+ enum um_desc_type {
+     UM_PHYSICAL_MAP,
+@@ -211,6 +216,11 @@ import_page_map(gckOS Os, struct device *dev, struct um_desc *um,
+ 
+     down_read(&current_mm_mmap_sem);
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
++    result = pin_user_pages(addr & PAGE_MASK, page_count,
++                            (flags & VM_WRITE) ? FOLL_WRITE : 0,
++                            pages);
++#else
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(5, 6, 0)
+     result = pin_user_pages(addr & PAGE_MASK, page_count,
+ #elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
+@@ -224,6 +234,7 @@ import_page_map(gckOS Os, struct device *dev, struct um_desc *um,
+                             (flags & VM_WRITE) ? 1 : 0, 0,
+ #endif
+                             pages, NULL);
++#endif
+ 
+     up_read(&current_mm_mmap_sem);
+ 
+diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
+index 264c91ce..7bfae274 100644
+--- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
++++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
+@@ -913,7 +913,11 @@ gceSTATUS viv_device_node_create(uint32_t dev_index)
+             major = result;
+ 
+         /* Create the device class. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
++        gpu_class = class_create(CLASS_NAME);
++#else
+         gpu_class = class_create(THIS_MODULE, CLASS_NAME);
++#endif
+ 
+         if (IS_ERR(gpu_class)) {
+             gpu_class = gcvNULL;
+diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
+index ca75aa26..c90d61a1 100644
+--- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
++++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
+@@ -337,7 +337,7 @@ gceSTATUS
+ _ConvertLogical2Physical(gckOS Os, gctPOINTER Logical, gctUINT32 ProcessID,
+                          PLINUX_MDL Mdl, gctPHYS_ADDR_T *Physical);
+ 
+-gctBOOL
++gceSTATUS
+ _QuerySignal(gckOS Os, gctSIGNAL Signal);
+ 
+ static inline gctINT
+diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
+index 448b40a8..17d96cd4 100644
+--- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
++++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
+@@ -104,7 +104,12 @@ gctBOOL memTraceFlag = 1;
+ #endif
+ 
+ #define _GC_OBJ_ZONE        gcvZONE_OS
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
++/* __pte_offset_map_lock is not exported to OOT modules on 6.5+; use follow_pfn instead. */
++#define gcdUSING_PFN_FOLLOW    1
++#else
+ #define gcdUSING_PFN_FOLLOW    0
++#endif
+ 
+ #include "gc_hal_kernel_allocator.h"
+ 
+@@ -427,7 +432,7 @@ _QueryProcessPageTable(gctPOINTER Logical, gctPHYS_ADDR_T *Address)
+         /* vmalloc area. */
+         *Address = page_to_phys(vmalloc_to_page(Logical)) | offset;
+         return gcvSTATUS_OK;
+-    } else if (virt_addr_valid(logical)) {
++    } else if (virt_addr_valid((void *)logical)) {
+         /* Kernel logical address. */
+         *Address = virt_to_phys(Logical);
+         return gcvSTATUS_OK;
