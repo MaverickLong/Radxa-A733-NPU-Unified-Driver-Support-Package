@@ -7,7 +7,7 @@ patch="$script_dir/galcore_6.6_kernel_api_drift.patch"
 [[ -f "$patch" ]] || { echo "missing patch file: $patch" >&2; exit 1; }
 
 bsp_root="${1:-$script_dir/aw_nna_galcore}"
-[[ -f "$bsp_root" ]] || { echo "missing Allwinner BSP package: $bsp_root" >&2; exit 1; }
+[[ -d "$bsp_root" ]] || { echo "missing Allwinner BSP package: $bsp_root" >&2; exit 1; }
 
 cd "$bsp_root"
 

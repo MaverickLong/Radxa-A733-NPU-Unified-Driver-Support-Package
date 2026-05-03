@@ -3,7 +3,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ko="$script_dir/aw_nna_galcore/galcore.ko}"
+ko="$script_dir/aw_nna_galcore/galcore.ko"
 [[ -f "$ko" ]] || { echo "missing module: $ko" >&2; exit 1; }
 
 if (( EUID != 0 )); then

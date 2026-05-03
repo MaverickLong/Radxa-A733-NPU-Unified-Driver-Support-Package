@@ -1,7 +1,7 @@
-diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
+diff --git a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
 index 44fbfac0..6e5cb273 100644
---- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
-+++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
+--- a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
++++ b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_dmabuf.c
 @@ -63,6 +63,9 @@
  #include <linux/mutex.h>
  #include <linux/atomic.h>
@@ -36,10 +36,10 @@ index 44fbfac0..6e5cb273 100644
      }
  
      seq_printf(m, "\nTotal %d objects, %d pages, %zu bytes\n", count, npages, size);
-diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
+diff --git a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
 index 09902c03..f4ddacd1 100644
---- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
-+++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
+--- a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
++++ b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_gfp.c
 @@ -381,7 +381,9 @@ _GFPAlloc(gckALLOCATOR Allocator, PLINUX_MDL Mdl, gctSIZE_T NumPages, gctUINT32
      gceSTATUS status;
      gctSIZE_T i = 0;
@@ -63,10 +63,10 @@ index 09902c03..f4ddacd1 100644
  
      if (Cacheable == gcvFALSE) {
          /* Make this mapping non-cached. */
-diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
+diff --git a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
 index 1c92af17..e6f39adc 100644
---- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
-+++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
+--- a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
++++ b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_reserved_mem.c
 @@ -227,7 +227,11 @@ reserved_mem_mmap(gckALLOCATOR Allocator, PLINUX_MDL Mdl, gctBOOL Cacheable,
      pfn = (res->start >> PAGE_SHIFT) + skipPages;
  
@@ -79,10 +79,10 @@ index 1c92af17..e6f39adc 100644
  
  #if gcdENABLE_BUFFERABLE_VIDEO_MEMORY
      vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
-diff --git a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
+diff --git a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
 index 4d871178..536fab66 100644
---- a/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
-+++ b/drivers/npu/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
+--- a/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
++++ b/aw_nna_galcore/os/allocator/default/gc_hal_kernel_allocator_user_memory.c
 @@ -63,7 +63,12 @@
  
  #define _GC_OBJ_ZONE        gcvZONE_ALLOCATOR
@@ -116,10 +116,10 @@ index 4d871178..536fab66 100644
  
      up_read(&current_mm_mmap_sem);
  
-diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
+diff --git a/aw_nna_galcore/os/gc_hal_kernel_driver.c b/aw_nna_galcore/os/gc_hal_kernel_driver.c
 index 264c91ce..7bfae274 100644
---- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
-+++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_driver.c
+--- a/aw_nna_galcore/os/gc_hal_kernel_driver.c
++++ b/aw_nna_galcore/os/gc_hal_kernel_driver.c
 @@ -913,7 +913,11 @@ gceSTATUS viv_device_node_create(uint32_t dev_index)
              major = result;
  
@@ -132,10 +132,10 @@ index 264c91ce..7bfae274 100644
  
          if (IS_ERR(gpu_class)) {
              gpu_class = gcvNULL;
-diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
+diff --git a/aw_nna_galcore/os/gc_hal_kernel_linux.h b/aw_nna_galcore/os/gc_hal_kernel_linux.h
 index ca75aa26..c90d61a1 100644
---- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
-+++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_linux.h
+--- a/aw_nna_galcore/os/gc_hal_kernel_linux.h
++++ b/aw_nna_galcore/os/gc_hal_kernel_linux.h
 @@ -337,7 +337,7 @@ gceSTATUS
  _ConvertLogical2Physical(gckOS Os, gctPOINTER Logical, gctUINT32 ProcessID,
                           PLINUX_MDL Mdl, gctPHYS_ADDR_T *Physical);
@@ -145,10 +145,10 @@ index ca75aa26..c90d61a1 100644
  _QuerySignal(gckOS Os, gctSIGNAL Signal);
  
  static inline gctINT
-diff --git a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
+diff --git a/aw_nna_galcore/os/gc_hal_kernel_os.c b/aw_nna_galcore/os/gc_hal_kernel_os.c
 index 448b40a8..17d96cd4 100644
---- a/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
-+++ b/drivers/npu/aw_nna_galcore/os/gc_hal_kernel_os.c
+--- a/aw_nna_galcore/os/gc_hal_kernel_os.c
++++ b/aw_nna_galcore/os/gc_hal_kernel_os.c
 @@ -104,7 +104,12 @@ gctBOOL memTraceFlag = 1;
  #endif
  
