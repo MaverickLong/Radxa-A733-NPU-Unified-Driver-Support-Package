@@ -1,0 +1,10 @@
+# build artifacts
+*.o
+*.d
+*.cmd
+*.mod
+*.mod.c
+*.ko
+*.symvers
+*.order
+*.bak
